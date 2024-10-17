@@ -193,6 +193,7 @@ void set_network_game_mode(EGameMode mode) {
 }
 
 bool is_online_match() {
+    /*
     const auto network_game_mode = get_network_game_mode();
 
     if (network_game_mode.has_value()) {
@@ -224,7 +225,7 @@ bool is_online_match() {
                 break;
         }
     }
-
+    */
     return false;
 }
 }
