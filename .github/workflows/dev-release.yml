@@ -29,35 +29,3 @@ jobs:
           path: ${{github.workspace}}/build/bin/${{matrix.target}}/dinput8.dll
           if-no-files-found: error
     
-  nightly-push:
-    runs-on: windows-latest
-    needs: dev-release
-    if: github.ref == 'refs/heads/master'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-        with:
-          persist-credentials: false
-
-      - name: Download artifacts
-        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427
-        with:
-          path: ${{github.workspace}}/artifacts
-
-      - name: Set padded run number
-        run: |
-          $paddedRunNumber = "{0:D5}" -f ${{ github.run_number }}
-          echo "RUN_NUMBER=$paddedRunNumber" >> $env:GITHUB_ENV
-        shell: powershell
-
-      - name: Create Release
-        uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
-        with:
-          repo: erik-perri/REFramework
-          name: ${{format('REF Nightly {0} ({1})', env.RUN_NUMBER, github.sha)}}
-          tag: ${{format('nightly-{0}-{1}', env.RUN_NUMBER, github.sha)}}
-          artifacts: ${{github.workspace}}/artifacts/**/*.dll
-          makeLatest: true
-          bodyFile: ${{github.workspace}}/nightly-body.md
-          allowUpdates: true
-
