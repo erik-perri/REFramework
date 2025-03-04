@@ -344,7 +344,13 @@ void ObjectExplorer::on_draw_dev_ui() {
         return;
     }
     if (ImGui::Button("Dump SDK")) {
-        std::thread t(&ObjectExplorer::generate_sdk, this);
+        std::thread t(&ObjectExplorer::generate_sdk, this, false);
+        t.detach();
+    }
+    
+    ImGui::SameLine();
+    if (ImGui::Button("Dump il2cpp json Only")) {
+        std::thread t(&ObjectExplorer::generate_sdk, this, true);
         t.detach();
     }
 
@@ -406,7 +412,8 @@ void ObjectExplorer::on_draw_dev_ui() {
         }
 
         // make a copy, we want to sort by name
-        auto singletons = reframework::get_globals()->get_objects();
+        auto singletons_unordered = reframework::get_globals()->get_objects();
+        std::vector<REManagedObject*> singletons{ singletons_unordered.begin(), singletons_unordered.end() };
 
         // first loop, sort
         std::sort(singletons.begin(), singletons.end(), [](REManagedObject* a, REManagedObject* b) {
@@ -988,7 +995,7 @@ void ObjectExplorer::export_deserializer_chain(nlohmann::json& il2cpp_dump, sdk:
 }
 #endif
 
-void ObjectExplorer::generate_sdk() {
+void ObjectExplorer::generate_sdk(const bool skip_sdkgenny) {
     // enums
     //auto ref = utility::scan(g_framework->get_module().as<HMODULE>(), "66 C7 40 18 01 01 48 89 05 ? ? ? ?");
     //auto& l = *(std::map<uint64_t, REEnumData>*)(utility::calculate_absolute(*ref + 9));
@@ -1081,6 +1088,16 @@ void ObjectExplorer::generate_sdk() {
         type_entry["name_hierarchy"] = t.get_name_hierarchy();
         type_entry["is_generic_type"] = t.is_generic_type();
         type_entry["is_generic_type_definition"] = t.is_generic_type_definition();
+
+#if TDB_VER >= 71
+        if (tdef->element_typeid_TBD != 0) {
+            type_entry["element_type_name"] = init_type(il2cpp_dump, tdb, tdef->element_typeid_TBD)->full_name;
+        }
+#elif TDB_VER >= 69
+        if (tdef->element_typeid != 0) {
+            type_entry["element_type_name"] = init_type(il2cpp_dump, tdb, tdef->element_typeid)->full_name;
+        }
+#endif
 
         if (auto gtd = t.get_generic_type_definition(); gtd != nullptr) {
             type_entry["generic_type_definition"] = gtd->get_full_name();
@@ -2231,9 +2248,11 @@ void ObjectExplorer::generate_sdk() {
 
     spdlog::info("Generating IDA SDK...");
     m_sdk_dump_stage = SdkDumpStage::GENERATE_SDK;
-    
-    genny::ida::transform(sdk);
-    sdk.generate("sdk_ida");
+
+    if (!skip_sdkgenny) {
+        genny::ida::transform(sdk);
+        sdk.generate("sdk_ida");
+    }
 
     // Free a couple gigabytes of no longer used memory
     g_stypedb.clear();
@@ -4253,6 +4272,8 @@ void ObjectExplorer::populate_classes() {
     auto type_list = reframework::get_types()->get_raw_types();
     spdlog::info("TypeList: {:x}", (uintptr_t)type_list);
 
+    std::unordered_set<REType*> seen{};
+
     if (type_list != nullptr) try {
         // I don't know why but it can extend past the size.
         for (auto i = 0; i < type_list->numAllocated; ++i) {
@@ -4266,6 +4287,10 @@ void ObjectExplorer::populate_classes() {
                 continue;
             }
 
+            if (seen.contains(t)) {
+                continue;
+            }
+
             auto name = std::string{ t->name };
 
             if (name.empty()) {
@@ -4275,6 +4300,8 @@ void ObjectExplorer::populate_classes() {
             spdlog::info("{:s}", name);
             m_sorted_types.push_back(name);
             m_types[name] = t;
+
+            seen.insert(t);
         }
 
         std::sort(m_sorted_types.begin(), m_sorted_types.end());
@@ -4284,8 +4311,6 @@ void ObjectExplorer::populate_classes() {
     }
 
     auto tdb = sdk::RETypeDB::get();
-
-    std::unordered_set<REType*> seen{};
 
     if (tdb != nullptr) {
         for (auto i = 0; i < tdb->get_num_types(); ++i) {

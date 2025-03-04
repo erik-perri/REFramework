@@ -46,6 +46,7 @@ REF_BUILD_DMC5_SDK = false
 REF_BUILD_MHRISE_SDK = false
 REF_BUILD_SF6_SDK = false
 REF_BUILD_DD2_SDK = false
+REF_BUILD_MHWILDS_SDK = false
 REF_BUILD_FRAMEWORK = { value = true, comment = "Enable building the full REFramework" }
 REF_BUILD_DEPENDENCIES = { value = true, comment = "Enable building dependencies" }
 
@@ -64,6 +65,7 @@ build-dmc5-sdk = "REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK"
 build-mhrise-sdk = "REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK"
 build-sf6-sdk = "REF_BUILD_SF6_SDK OR REF_BUILD_FRAMEWORK"
 build-dd2-sdk = "REF_BUILD_DD2_SDK OR REF_BUILD_FRAMEWORK"
+build-mhwilds-sdk = "REF_BUILD_MHWILDS_SDK OR REF_BUILD_FRAMEWORK"
 build-framework-dependencies = "REF_BUILD_DEPENDENCIES AND CMAKE_SIZEOF_VOID_P EQUAL 8"
 
 [fetch-content.asmjit]
@@ -80,7 +82,7 @@ tag = "f5026eb34e7053b1aff325d38db107703f394974"
 
 [fetch-content.directxtk12]
 git = "https://github.com/microsoft/DirectXTK12"
-tag = "528801aa6dd8d628c2f756c41a76d300f47de478"
+tag = "be5dfc7e391aefaa4eeab8e8a08f7e2669e56cbb"
 
 [target.spdlog]
 cmake-after="""
@@ -175,7 +177,7 @@ tag = "v1.34.10"
 
 [fetch-content.kananlib]
 git = "https://github.com/cursey/kananlib"
-tag = "cca66766b139994f478ea48befd67a179b7310ab"
+tag = "d659e3b8312e26ba19329f96b73ba88d1211bfdb"
 
 [target.utility]
 type = "static"
@@ -349,6 +351,14 @@ compile-definitions = ["DD2", "REENGINE_PACKED", "REENGINE_AT"]
 condition = "build-dd2-sdk"
 
 [target.DD2]
+type = "game"
+
+[target.MHWILDSSDK]
+type = "sdk"
+compile-definitions = ["MHWILDS", "REENGINE_PACKED", "REENGINE_AT"]
+condition = "build-mhwilds-sdk"
+
+[target.MHWILDS]
 type = "game"
 
 [template.plugin]
