@@ -29,7 +29,7 @@
 #elif defined(RE4)
 #include "sdk/regenny/re4/via/Window.hpp"
 #include "sdk/regenny/re4/via/SceneView.hpp"
-#elif defined(DD2)
+#elif defined(DD2) || TDB_VER >= 74 // TODO: Actually make headers for TDB74
 #include "sdk/regenny/dd2/via/Window.hpp"
 #include "sdk/regenny/dd2/via/SceneView.hpp"
 #else
@@ -1067,6 +1067,12 @@ void Graphics::apply_ray_tracing_tweaks() {
         }
 
         if (set_enabled != nullptr) {
+            if (rt_type == 0) {
+                // Just turn it off
+                set_enabled->call<void>(context, target, false);
+                return;
+            }
+
             set_enabled->call<void>(context, target, true); // Some games have this disabled.
         }
 
