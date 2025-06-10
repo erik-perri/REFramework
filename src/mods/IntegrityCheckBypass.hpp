@@ -28,6 +28,7 @@ public:
     static void fix_virtual_protect();
 
     static void hook_add_vectored_exception_handler();
+    static void hook_rtl_exit_user_process();
 
     static void allow_veh() {
         s_veh_allowed = true;
@@ -42,6 +43,11 @@ private:
     static inline std::unique_ptr<FunctionHook> s_renderer_create_blas_hook{};
     static inline uint32_t* s_corruption_when_zero{ nullptr };
     static inline uint32_t s_last_non_zero_corruption{ 8 }; // What I've seen it default to
+
+    static void sha3_rsa_code_midhook(safetyhook::Context& context);
+    static void restore_unencrypted_paks();
+    static inline safetyhook::MidHook s_sha3_rsa_code_midhook;
+    static inline std::optional<uintptr_t> s_sha3_code_end{};
 
     static void anti_debug_watcher();
     static void init_anti_debug_watcher();
@@ -61,6 +67,9 @@ private:
     // Using minhook because safetyhook crashes on trying to hook VirtualProtect
     static inline std::unique_ptr<FunctionHookMinHook> s_virtual_protect_hook{};
     static inline std::unique_ptr<FunctionHookMinHook> s_add_vectored_exception_handler_hook{};
+
+    static void* rtl_exit_user_process_hook(uint32_t code);
+    static inline std::unique_ptr<FunctionHookMinHook> s_rtl_exit_user_process_hook{};
 
 #ifdef RE3
     // This is what the game uses to bypass its integrity checks altogether or something
